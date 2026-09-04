@@ -383,6 +383,17 @@ const AdminConfigSchemaWithVisibility = z
           .meta({ id: 'AdminConfigGeneratedFullsizeImageDto' }),
         colorspace: ColorspaceSchema,
         extractEmbedded: configBool.describe('Extract embedded'),
+        hdr: z
+          .object({
+            enabled: configBool
+              .default(true)
+              .optional()
+              .describe('Generate HDR AVIF previews for HDR HEIC/HEIF assets'),
+            quality: z.int().min(1).max(100).default(65).optional().describe('Quality'),
+          })
+          .default({ enabled: true, quality: 65 })
+          .optional()
+          .meta({ id: 'AdminConfigGeneratedHdrImageDto' }),
       })
       .meta({ id: 'AdminConfigImageDto' }),
     newVersionCheck: z
@@ -758,6 +769,10 @@ export const defaults = Object.freeze<SystemConfig>({
       format: ImageFormat.Jpeg,
       quality: 80,
       progressive: false,
+    },
+    hdr: {
+      enabled: true,
+      quality: 65,
     },
   },
   newVersionCheck: {

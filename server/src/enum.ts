@@ -611,6 +611,7 @@ export enum ImageFormat {
   Jpeg = 'jpeg',
   Jxl = 'jxl',
   Webp = 'webp',
+  Avif = 'avif',
 }
 
 export const ImageFormatSchema = z.enum(ImageFormat).describe('Image format').meta({ id: 'ImageFormat' });

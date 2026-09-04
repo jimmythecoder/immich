@@ -37,6 +37,7 @@
               { value: ImageFormat.Jpeg, text: 'JPEG' },
               { value: ImageFormat.Jxl, text: 'JPEG XL' },
               { value: ImageFormat.Webp, text: 'WebP' },
+              { value: ImageFormat.Avif, text: 'AVIF' },
             ]}
             name="format"
             isEdited={configToEdit.image.thumbnail.format !== config.image.thumbnail.format}
@@ -97,6 +98,7 @@
               { value: ImageFormat.Jpeg, text: 'JPEG' },
               { value: ImageFormat.Jxl, text: 'JPEG XL' },
               { value: ImageFormat.Webp, text: 'WebP' },
+              { value: ImageFormat.Avif, text: 'AVIF' },
             ]}
             name="format"
             isEdited={configToEdit.image.preview.format !== config.image.preview.format}
@@ -167,6 +169,7 @@
               { value: ImageFormat.Jpeg, text: 'JPEG' },
               { value: ImageFormat.Jxl, text: 'JPEG XL' },
               { value: ImageFormat.Webp, text: 'WebP' },
+              { value: ImageFormat.Avif, text: 'AVIF' },
             ]}
             name="format"
             isEdited={configToEdit.image.fullsize.format !== config.image.fullsize.format}

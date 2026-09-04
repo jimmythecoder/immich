@@ -26,6 +26,10 @@ const AssetMediaOptionsSchema = z
         .getExtensions(),
     ),
     edited: stringToBool.default(false).optional().describe('Return edited asset if available'),
+    hdr: stringToBool
+      .default(false)
+      .optional()
+      .describe('Return the HDR (10-bit AVIF) derivative when one is available, otherwise the standard preview'),
   })
   .meta({ id: 'AssetMediaOptionsDto' });
 

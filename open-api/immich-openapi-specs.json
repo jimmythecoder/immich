@@ -5031,6 +5031,15 @@
             }
           },
           {
+            "name": "hdr",
+            "required": false,
+            "in": "query",
+            "description": "Return the HDR (10-bit AVIF) derivative when one is available, otherwise the standard preview",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "id",
             "required": true,
             "in": "path",
@@ -19321,6 +19330,22 @@
         ],
         "type": "object"
       },
+      "AdminConfigGeneratedHdrImageDto": {
+        "properties": {
+          "enabled": {
+            "description": "Generate HDR AVIF previews for HDR HEIC/HEIF assets",
+            "type": "boolean"
+          },
+          "quality": {
+            "default": 65,
+            "description": "Quality",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "AdminConfigGeneratedImageDto": {
         "properties": {
           "format": {
@@ -19361,6 +19386,9 @@
           },
           "fullsize": {
             "$ref": "#/components/schemas/AdminConfigGeneratedFullsizeImageDto"
+          },
+          "hdr": {
+            "$ref": "#/components/schemas/AdminConfigGeneratedHdrImageDto"
           },
           "preview": {
             "$ref": "#/components/schemas/AdminConfigGeneratedImageDto"
@@ -23109,7 +23137,8 @@
         "enum": [
           "jpeg",
           "jxl",
-          "webp"
+          "webp",
+          "avif"
         ],
         "type": "string"
       },

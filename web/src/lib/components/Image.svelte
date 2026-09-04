@@ -6,15 +6,24 @@
 
   type Props = Omit<HTMLImgAttributes, 'onload' | 'onerror'> & {
     src: string | undefined;
+    /**
+     * Optional HDR (10-bit AVIF) derivative.
+     *
+     * Offered through a `<picture>` source that is gated on both AVIF support
+     * and an HDR-capable display, so SDR displays and older browsers keep
+     * receiving the ordinary `src` untouched.
+     */
+    hdrSrc?: string;
     onStart?: () => void;
     onLoad?: () => void;
     onError?: (error: Error) => void;
     ref?: HTMLImageElement;
   };
 
-  let { src, onStart, onLoad, onError, ref = $bindable(), ...rest }: Props = $props();
+  let { src, hdrSrc, onStart, onLoad, onError, ref = $bindable(), ...rest }: Props = $props();
 
   let capturedSource: string | undefined = $state();
+  let capturedHdrSource: string | undefined = $state();
   let loaded = $state(false);
   let destroyed = false;
 
@@ -24,6 +33,9 @@
     }
 
     capturedSource = src;
+    // Captured alongside src so both stay consistent for the lifetime of the
+    // element, matching the existing {#key} behaviour.
+    capturedHdrSource = hdrSrc;
     untrack(() => {
       onStart?.();
     });
@@ -67,13 +79,23 @@
 
 {#if capturedSource}
   {#key capturedSource}
-    <img
-      bind:this={ref}
-      src={capturedSource}
-      {...rest}
-      style:visibility={isFirefox && !loaded ? 'hidden' : undefined}
-      onload={handleLoad}
-      onerror={handleError}
-    />
+    <picture>
+      {#if capturedHdrSource}
+        <!--
+          Selected only when the browser decodes AVIF *and* the display can
+          actually show high dynamic range. Everything else falls through to the
+          <img> below, which is unchanged.
+        -->
+        <source type="image/avif" media="(dynamic-range: high)" srcset={capturedHdrSource} />
+      {/if}
+      <img
+        bind:this={ref}
+        src={capturedSource}
+        {...rest}
+        style:visibility={isFirefox && !loaded ? 'hidden' : undefined}
+        onload={handleLoad}
+        onerror={handleError}
+      />
+    </picture>
   {/key}
 {/if}

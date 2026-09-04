@@ -57,7 +57,7 @@
   import BrokenAsset from '#lib/components/assets/BrokenAsset.svelte';
   import { assetViewerManager } from '#lib/managers/asset-viewer-manager.svelte.ts';
   import { languageManager } from '#lib/managers/language-manager.svelte.ts';
-  import { getAssetUrls } from '#lib/utils.ts';
+  import { getAssetHdrPreviewUrl, getAssetUrls } from '#lib/utils.ts';
   import { AdaptiveImageLoader, type QualityList } from '#lib/utils/adaptive-image-loader.svelte.ts';
   import { scaleToCover, scaleToFit, type Size } from '#lib/utils/container-utils.ts';
   import { getAltText } from '#lib/utils/thumbnail-util.ts';
@@ -122,6 +122,14 @@
   };
 
   const loaderKey = $derived(`${asset.id}:${asset.thumbhash}:${sharedLink?.id}`);
+
+  /**
+   * HDR derivative offered alongside the SDR preview. Suppressed for shared
+   * links with restricted metadata, which are limited to the plain preview.
+   */
+  const hdrPreviewUrl = $derived(
+    sharedLink && (!sharedLink.allowDownload || !sharedLink.showMetadata) ? undefined : getAssetHdrPreviewUrl(asset),
+  );
 
   const adaptiveImageLoader = $derived.by(() => {
     void loaderKey;
@@ -270,6 +278,7 @@
           height={rasterHeight}
           quality="preview"
           src={status.urls.preview}
+          hdrSrc={hdrPreviewUrl}
           bind:ref={previewElement}
         />
       {/if}
