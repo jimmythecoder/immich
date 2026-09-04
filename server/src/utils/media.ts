@@ -23,6 +23,7 @@ import {
   ColorMatrix,
   ColorPrimaries,
   ColorTransfer,
+  ImageFormat,
   ToneMapping,
   TranscodeHardwareAcceleration,
   TranscodeTarget,
@@ -30,6 +31,14 @@ import {
 } from 'src/enum.js';
 
 export const isVideoRotated = (videoStream: VideoStreamInfo): boolean => Math.abs(videoStream.rotation) === 90;
+
+/**
+ * Whether an image format supports progressive (interlaced) encoding.
+ *
+ * Only JPEG does. WebP and AVIF have no equivalent, so the flag must not be
+ * forwarded to their encoders.
+ */
+export const supportsProgressive = (format: ImageFormat): boolean => format === ImageFormat.Jpeg;
 
 // whether the video is portrait once its rotation is applied
 export const isVideoVertical = (videoStream: VideoStreamInfo): boolean =>

@@ -13,6 +13,7 @@ import {
   StorageFolder,
   SystemMetadataKey,
 } from 'src/enum.js';
+import { getHdrPreviewPath } from 'src/repositories/image-pipeline/hdr-heif.pipeline.js';
 import { BaseService } from 'src/services/base.service.js';
 import { ImmichStartupError } from 'src/utils/misc.js';
 
@@ -148,6 +149,18 @@ export class StorageService extends BaseService {
         await this.storageRepository.unlink(file);
       } catch (error: any) {
         this.logger.warn('Unable to remove file from disk', error);
+      }
+
+      // HDR previews are derived from the preview path rather than tracked in
+      // the database, so remove the sibling derivative alongside its parent.
+      // This is a no-op for files that never had one.
+      const hdrPath = getHdrPreviewPath(file);
+      if (hdrPath !== file) {
+        try {
+          await this.storageRepository.unlink(hdrPath);
+        } catch {
+          // no HDR derivative for this file
+        }
       }
     }
 

@@ -33,6 +33,7 @@ import {
   DvSignalCompatibility,
   H264Profile,
   HevcProfile,
+  ImageFormat,
   LogLevel,
   RawExtractedFormat,
 } from 'src/enum.js';
@@ -179,15 +180,20 @@ export class MediaRepository {
   }
 
   async generateThumbnail(image: Bitmap, options: GenerateThumbnailOptions, output: string): Promise<void> {
+    const formatOptions: sharp.JpegOptions & sharp.WebpOptions & sharp.AvifOptions = {
+      quality: options.quality,
+      // this is default in libvips (except the threshold is 90), but we need to set it manually in sharp
+      chromaSubsampling: options.quality >= 80 ? '4:4:4' : '4:2:0',
+    };
+
+    // AVIF is not a progressive format; passing the flag through would be
+    // meaningless and libvips rejects some combinations outright.
+    if (options.format !== ImageFormat.Avif) {
+      formatOptions.progressive = options.progressive;
+    }
+
     const transformed = await this.transform(image, options);
-    await this.tag(transformed, options.colorspace)
-      .toFormat(options.format, {
-        quality: options.quality,
-        // this is default in libvips (except the threshold is 90), but we need to set it manually in sharp
-        chromaSubsampling: options.quality >= 80 ? '4:4:4' : '4:2:0',
-        progressive: options.progressive,
-      })
-      .toFile(output);
+    await this.tag(transformed, options.colorspace).toFormat(options.format, formatOptions).toFile(output);
   }
 
   private getImageDecodingPipeline(input: string | Buffer, options: DecodeToBufferOptions) {

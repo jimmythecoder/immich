@@ -36,11 +36,16 @@ import {
   VideoContainer,
 } from 'src/enum.js';
 import { AssetJobRepository } from 'src/repositories/asset-job.repository.js';
+import {
+  getHdrPreviewPath,
+  HdrHeifPipeline,
+  isHeifExtension,
+} from 'src/repositories/image-pipeline/hdr-heif.pipeline.js';
 import { BoundingBox } from 'src/repositories/machine-learning.repository.js';
 import { BaseService } from 'src/services/base.service.js';
 import { getAssetFile, getDimensions } from 'src/utils/asset.util.js';
 import { checkFaceVisibility, checkOcrVisibility } from 'src/utils/editor.js';
-import { BaseConfig, ThumbnailConfig } from 'src/utils/media.js';
+import { BaseConfig, supportsProgressive, ThumbnailConfig } from 'src/utils/media.js';
 import { mimeTypes } from 'src/utils/mime-types.js';
 import { batched, clamp } from 'src/utils/misc.js';
 import { getOutputDimensions } from 'src/utils/transform.js';
@@ -59,6 +64,18 @@ type ThumbnailAsset = NonNullable<Awaited<ReturnType<AssetJobRepository['getForG
 @Injectable()
 export class MediaService extends BaseService {
   videoInterfaces: VideoInterfaces = { dri: [], mali: false };
+
+  private hdrHeifPipelineInstance?: HdrHeifPipeline;
+
+  /**
+   * Constructed lazily so the HDR pipeline costs nothing on deployments that
+   * never encounter an HDR HEIC, and so adding it does not require touching the
+   * shared BaseService constructor.
+   */
+  private get hdrHeifPipeline(): HdrHeifPipeline {
+    this.hdrHeifPipelineInstance ??= new HdrHeifPipeline(this.logger);
+    return this.hdrHeifPipelineInstance;
+  }
 
   @OnEvent({ name: 'AppBootstrap', workers: [ImmichWorker.Microservices] })
   async onBootstrap() {
@@ -303,14 +320,14 @@ export class MediaService extends BaseService {
       fileType: AssetFileType.Preview,
       format: previewFormat,
       isEdited: useEdits,
-      isProgressive: !!image.preview.progressive && previewFormat !== ImageFormat.Webp,
+      isProgressive: !!image.preview.progressive && supportsProgressive(previewFormat),
       isTransparent,
     });
     const thumbnailFile = this.getImageFile(asset, {
       fileType: AssetFileType.Thumbnail,
       format: thumbnailFormat,
       isEdited: useEdits,
-      isProgressive: !!image.thumbnail.progressive && thumbnailFormat !== ImageFormat.Webp,
+      isProgressive: !!image.thumbnail.progressive && supportsProgressive(thumbnailFormat),
       isTransparent,
     });
     this.storageCore.ensureFolders(previewFile.path);
@@ -335,7 +352,7 @@ export class MediaService extends BaseService {
         fileType: AssetFileType.FullSize,
         format: fullsizeFormat,
         isEdited: useEdits,
-        isProgressive: !!image.fullsize.progressive && fullsizeFormat !== ImageFormat.Webp,
+        isProgressive: !!image.fullsize.progressive && supportsProgressive(fullsizeFormat),
         isTransparent,
       });
       const fullsizeOptions = {
@@ -350,7 +367,7 @@ export class MediaService extends BaseService {
         fileType: AssetFileType.FullSize,
         format: extracted.format,
         isEdited: false,
-        isProgressive: !!image.fullsize.progressive && image.fullsize.format !== ImageFormat.Webp,
+        isProgressive: !!image.fullsize.progressive && supportsProgressive(image.fullsize.format),
         isTransparent,
       });
       this.storageCore.ensureFolders(fullsizeFile.path);
@@ -381,11 +398,81 @@ export class MediaService extends BaseService {
     const decodedDimensions = { width: info.width, height: info.height };
     const fullsizeDimensions = useEdits ? getOutputDimensions(asset.edits, decodedDimensions) : decodedDimensions;
 
+    // Additive HDR derivative. Runs after the SDR outputs are safely written so
+    // that a failure here can never cost the asset its ordinary preview.
+    await this.generateHdrPreview(asset, previewFile.path, image);
+
     return {
       files: fullsizeFile ? [previewFile, thumbnailFile, fullsizeFile] : [previewFile, thumbnailFile],
       thumbhash: outputs[0] as Buffer,
       fullsizeDimensions,
     };
+  }
+
+  /**
+   * Remove a previously generated HDR derivative, ignoring the common case
+   * where none exists. Cleanup must never disrupt thumbnail generation.
+   */
+  private async removeHdrPreview(hdrPath: string): Promise<void> {
+    try {
+      await this.storageRepository.unlink(hdrPath);
+    } catch {
+      // nothing to remove
+    }
+  }
+
+  /**
+   * Generate a 10-bit HDR AVIF alongside the existing SDR preview.
+   *
+   * The HDR preview is strictly additive: the SDR preview is already on disk by
+   * the time this runs, and every failure path is swallowed after logging so
+   * that thumbnail generation, upload, and indexing continue unaffected.
+   */
+  private async generateHdrPreview(
+    asset: ThumbnailAsset,
+    previewPath: string,
+    image: SystemConfig['image'],
+  ): Promise<void> {
+    if (!image.hdr?.enabled) {
+      return;
+    }
+
+    // Cheap extension check before doing any work at all.
+    if (!isHeifExtension(asset.originalFileName) && !isHeifExtension(asset.originalPath)) {
+      return;
+    }
+
+    const hdrPath = getHdrPreviewPath(previewPath);
+    const input = { path: asset.originalPath, originalFileName: asset.originalFileName };
+
+    try {
+      const probe = await this.hdrHeifPipeline.probe(input);
+      if (!probe?.hdr) {
+        // Ordinary SDR HEIC: remove any derivative left by a previous run so a
+        // stale HDR preview is never served after settings or content change.
+        await this.removeHdrPreview(hdrPath);
+        return;
+      }
+
+      this.storageCore.ensureFolders(hdrPath);
+
+      const preview = await this.hdrHeifPipeline.generatePreview(input, hdrPath, {
+        size: image.preview.size,
+        quality: image.hdr.quality ?? 65,
+      });
+
+      this.logger.debug(
+        `Generated HDR AVIF preview for asset ${asset.id}: ${preview.width}x${preview.height} ` +
+          `${preview.bitDepth}-bit ${preview.colorPrimaries}/${preview.transferCharacteristics} ` +
+          `(mode=${probe.mode}, headroom=${probe.gainMapHeadroom.toFixed(3)}, maxCLL=${preview.maxCll} nits)`,
+      );
+    } catch (error: any) {
+      this.logger.warn(
+        `HDR AVIF generation failed for asset ${asset.id}; using SDR preview: ${error?.message ?? error}`,
+      );
+      // Never leave a partially written derivative behind.
+      await this.removeHdrPreview(hdrPath);
+    }
   }
 
   @OnJob({ name: JobName.PersonGenerateThumbnail, queue: QueueName.ThumbnailGeneration })
