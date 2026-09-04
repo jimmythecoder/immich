@@ -28,6 +28,7 @@ import {
   StorageFolder,
 } from 'src/enum';
 import { AuthRequest } from 'src/middleware/auth.guard';
+import { getHdrPreviewPath } from 'src/repositories/image-pipeline/hdr-heif.pipeline';
 import { BaseService } from 'src/services/base.service';
 import { UploadFile, UploadRequest } from 'src/types';
 import { requireUploadAccess } from 'src/utils/access';
@@ -287,6 +288,22 @@ export class AssetMediaService extends BaseService {
 
     const fileNameBase =
       auth.sharedLink && !auth.sharedLink.showExif ? id : getFileNameWithoutExtension(originalFileName);
+
+    // Serve the HDR derivative only when it was explicitly requested and is
+    // actually present. Any miss falls through to the standard preview below,
+    // so a missing or failed HDR preview can never produce a broken response.
+    if (dto.hdr && size === AssetFileType.Preview) {
+      const hdrPath = getHdrPreviewPath(path);
+      if (await this.storageRepository.checkFileExists(hdrPath)) {
+        return new ImmichFileResponse({
+          fileName: `${fileNameBase}_${size}_hdr.avif`,
+          path: hdrPath,
+          contentType: 'image/avif',
+          cacheControl: CacheControl.PrivateWithCache,
+        });
+      }
+    }
+
     const fileName = `${fileNameBase}_${size}${getFilenameExtension(path)}`;
 
     return new ImmichFileResponse({

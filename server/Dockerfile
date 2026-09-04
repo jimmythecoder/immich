@@ -41,6 +41,19 @@ RUN --mount=type=cache,id=pnpm,target=/buildcache/pnpm-store \
 RUN --mount=type=cache,id=pnpm,target=/buildcache/pnpm-store \
   SHARP_FORCE_GLOBAL_LIBVIPS=true pnpm --config.verify-deps-before-run=false --dir /output/server-pruned/node_modules/sharp exec npm run build
 
+# HDR HEIF -> AVIF helper. Decodes Apple HDR HEIC (including tiled grids and
+# `hdrgainmap` auxiliary images) via libheif and encodes 10-bit PQ AVIF via
+# libavif. Built here so the runtime image only needs the shared libraries.
+FROM builder AS hdr-heif
+
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends build-essential pkg-config libheif-dev libavif-dev && \
+  rm -rf /var/lib/apt/lists/*
+
+COPY ./server/native/hdr-heif /src/hdr-heif
+WORKDIR /src/hdr-heif
+RUN make && ./build/immich-hdr-heif --help > /dev/null
+
 FROM sdk AS web
 
 COPY ./web/package.json ./web/package.json
@@ -98,6 +111,18 @@ COPY --from=web /usr/src/app/web/build /build/www
 COPY --from=cli /output/cli-pruned ./cli
 COPY --from=plugins /usr/src/app/packages/plugin-core/dist /build/plugins/immich-plugin-core/dist
 COPY --from=plugins /usr/src/app/packages/plugin-core/manifest.json /build/plugins/immich-plugin-core/manifest.json
+
+# HDR HEIF helper plus the libavif runtime it needs. libheif and libaom are
+# already present in the base image. Installation failure must not break the
+# build: the server treats a missing helper as "no HDR support" and falls back
+# to the standard SDR pipeline.
+COPY --from=hdr-heif /src/hdr-heif/build/immich-hdr-heif /usr/local/bin/immich-hdr-heif
+RUN apt-get update && \
+  apt-get install -y --no-install-recommends libavif16 && \
+  rm -rf /var/lib/apt/lists/* && \
+  ldconfig && \
+  (immich-hdr-heif --help > /dev/null && echo "HDR HEIF helper OK" || echo "WARNING: HDR HEIF helper unavailable; HDR previews disabled")
+
 RUN ln -s ../../cli/bin/immich server/bin/immich
 COPY LICENSE /licenses/LICENSE.txt
 COPY LICENSE /LICENSE

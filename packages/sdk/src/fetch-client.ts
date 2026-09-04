@@ -121,6 +121,12 @@ export type AdminConfigGeneratedFullsizeImageDto = {
     /** Quality */
     quality: number;
 };
+export type AdminConfigGeneratedHdrImageDto = {
+    /** Generate HDR AVIF previews for HDR HEIC/HEIF assets */
+    enabled?: boolean;
+    /** Quality */
+    quality?: number;
+};
 export type AdminConfigGeneratedImageDto = {
     format: ImageFormat;
     /** Progressive */
@@ -135,6 +141,7 @@ export type AdminConfigImageDto = {
     /** Extract embedded */
     extractEmbedded: boolean;
     fullsize: AdminConfigGeneratedFullsizeImageDto;
+    hdr?: AdminConfigGeneratedHdrImageDto;
     preview: AdminConfigGeneratedImageDto;
     thumbnail: AdminConfigGeneratedImageDto;
 };
@@ -4885,8 +4892,9 @@ export function downloadAsset({ edited, id, key, slug }: {
 /**
  * View asset thumbnail
  */
-export function viewAsset({ edited, id, key, size, slug }: {
+export function viewAsset({ edited, hdr, id, key, size, slug }: {
     edited?: boolean;
+    hdr?: boolean;
     id: string;
     key?: string;
     size?: AssetMediaSize;
@@ -4897,6 +4905,7 @@ export function viewAsset({ edited, id, key, size, slug }: {
         data: Blob;
     }>(`/assets/${encodeURIComponent(id)}/thumbnail${QS.query(QS.explode({
         edited,
+        hdr,
         key,
         size,
         slug
@@ -7821,7 +7830,8 @@ export enum Colorspace {
 }
 export enum ImageFormat {
     Jpeg = "jpeg",
-    Webp = "webp"
+    Webp = "webp",
+    Avif = "avif"
 }
 export enum LogLevel {
     Verbose = "verbose",

@@ -5,6 +5,7 @@ import {
   ColorPrimaries,
   ColorTransfer,
   CQMode,
+  ImageFormat,
   ToneMapping,
   TranscodeHardwareAcceleration,
   TranscodeTarget,
@@ -23,6 +24,14 @@ import {
 } from 'src/types';
 
 export const isVideoRotated = (videoStream: VideoStreamInfo): boolean => Math.abs(videoStream.rotation) === 90;
+
+/**
+ * Whether an image format supports progressive (interlaced) encoding.
+ *
+ * Only JPEG does. WebP and AVIF have no equivalent, so the flag must not be
+ * forwarded to their encoders.
+ */
+export const supportsProgressive = (format: ImageFormat): boolean => format === ImageFormat.Jpeg;
 
 export const isVideoVertical = (videoStream: VideoStreamInfo): boolean =>
   videoStream.height > videoStream.width || isVideoRotated(videoStream);

@@ -6,6 +6,8 @@
     adaptiveImageLoader: AdaptiveImageLoader;
     quality: ImageQuality;
     src: string | undefined;
+    /** Optional HDR derivative, offered via <picture> when the display supports it. */
+    hdrSrc?: string;
     alt?: string;
     role?: string;
     ref?: HTMLImageElement;
@@ -13,13 +15,14 @@
     height: string;
   };
 
-  let { adaptiveImageLoader, quality, src, alt = '', role, ref = $bindable(), width, height }: Props = $props();
+  let { adaptiveImageLoader, quality, src, hdrSrc, alt = '', role, ref = $bindable(), width, height }: Props = $props();
 </script>
 
 {#key adaptiveImageLoader}
   <div class="absolute top-0" style:width style:height>
     <Image
       {src}
+      {hdrSrc}
       onStart={() => adaptiveImageLoader.onStart(quality)}
       onLoad={() => adaptiveImageLoader.onLoad(quality)}
       onError={() => adaptiveImageLoader.onError(quality)}

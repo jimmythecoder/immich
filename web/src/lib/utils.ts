@@ -218,6 +218,23 @@ export function getAssetUrls(asset: AssetResponseDto, sharedLink?: SharedLinkRes
   };
 }
 
+/**
+ * URL for the HDR (10-bit AVIF) preview.
+ *
+ * Only produced for images, since HDR previews are generated from still assets.
+ */
+export const getAssetHdrPreviewUrl = (asset: AssetResponseDto) => {
+  if (asset.type !== AssetTypeEnum.Image) {
+    return undefined;
+  }
+  return createUrl(getAssetThumbnailPath(asset.id), {
+    ...authManager.params,
+    size: AssetMediaSize.Preview,
+    c: asset.thumbhash,
+    hdr: true,
+  });
+};
+
 const forceUseOriginal = (asset: AssetResponseDto) => {
   return asset.type === AssetTypeEnum.Image && asset.duration;
 };
