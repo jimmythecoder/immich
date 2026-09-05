@@ -19,6 +19,70 @@ const CONVERT_TIMEOUT_MS = 180_000;
 const DEFAULT_BINARY_NAME = 'immich-hdr-heif';
 
 /**
+ * Bounds how many conversions may run at once.
+ *
+ * A single conversion of a 48MP HEIC peaks around 200MB RSS: the full-size base
+ * image, the gain map, and the linear working buffer all have to be resident at
+ * the same time. Thumbnail generation defaults to a job concurrency of 3, and
+ * Sharp is simultaneously decoding the same large images, so leaving this
+ * unbounded can exhaust memory on small hosts (an 8GB NAS running the whole
+ * stack will OOM part-way through a bulk import).
+ *
+ * Serialising by default costs very little - the encoder is already
+ * multi-threaded - and makes memory use predictable. Raise it on larger hosts
+ * with IMMICH_HDR_CONCURRENCY.
+ */
+const parseConcurrency = (): number => {
+  const raw = Number(process.env.IMMICH_HDR_CONCURRENCY);
+  if (!Number.isSafeInteger(raw) || raw < 1) {
+    return 1;
+  }
+  return Math.min(raw, 8);
+};
+
+/**
+ * Minimal counting semaphore.
+ *
+ * On release the slot is handed directly to the next waiter rather than being
+ * decremented and re-acquired, which would let a new caller slip in ahead of
+ * the queue and briefly exceed the limit.
+ */
+class Semaphore {
+  private active = 0;
+  private waiting: Array<() => void> = [];
+
+  constructor(private readonly max: number) {}
+
+  async acquire(): Promise<() => void> {
+    if (this.active < this.max) {
+      this.active++;
+    } else {
+      await new Promise<void>((resolve) => {
+        this.waiting.push(resolve);
+      });
+    }
+
+    let released = false;
+    return () => {
+      if (released) {
+        return;
+      }
+      released = true;
+
+      const next = this.waiting.shift();
+      if (next) {
+        next();
+      } else {
+        this.active--;
+      }
+    };
+  }
+}
+
+// Shared across instances: the constraint is host memory, not any one object.
+const conversionLimiter = new Semaphore(parseConcurrency());
+
+/**
  * Locations searched for the helper binary, in order.
  *
  * `IMMICH_HDR_HEIF_BIN` wins so a deployment can point at its own build; the
@@ -146,6 +210,12 @@ export class HdrHeifCliConverter implements HdrHeifConverter {
       args.push('--speed', String(options.speed));
     }
 
-    return this.run<HdrConvertResult>(args, CONVERT_TIMEOUT_MS);
+    // Queue rather than run in parallel; see conversionLimiter above.
+    const release = await conversionLimiter.acquire();
+    try {
+      return await this.run<HdrConvertResult>(args, CONVERT_TIMEOUT_MS);
+    } finally {
+      release();
+    }
   }
 }
