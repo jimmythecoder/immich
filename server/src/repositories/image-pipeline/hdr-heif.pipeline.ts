@@ -44,6 +44,9 @@ export const getHdrPreviewPath = (previewPath: string): string => {
 export class HdrHeifPipeline implements ImagePipeline {
   readonly name = 'hdr-heif';
 
+  /** Ensures the "helper missing" warning is emitted once, not per asset. */
+  private warnedUnavailable = false;
+
   constructor(
     private logger: LoggingRepository,
     private converter: HdrHeifConverter = new HdrHeifCliConverter(),
@@ -72,13 +75,23 @@ export class HdrHeifPipeline implements ImagePipeline {
     }
 
     if (!(await this.converter.isAvailable())) {
-      this.logger.debug('HDR HEIF helper is unavailable; using the standard image pipeline');
+      // Warn once rather than per asset: a missing helper is a deployment
+      // problem the operator needs to see, but it must not flood the log.
+      if (!this.warnedUnavailable) {
+        this.warnedUnavailable = true;
+        this.logger.warn(
+          'HDR HEIF helper binary was not found; HDR previews are disabled and all images will use the standard pipeline. ' +
+            'Set IMMICH_HDR_HEIF_BIN if it is installed somewhere unusual.',
+        );
+      }
       return null;
     }
 
     const probe = await this.converter.probe(input.path);
     if (!probe) {
-      this.logger.debug(`HDR detection was inconclusive for ${input.path}; using the standard image pipeline`);
+      // Distinct from "not HDR": this means detection itself failed, which is
+      // worth surfacing because it usually indicates an unreadable file.
+      this.logger.warn(`HDR detection failed for ${input.path}; using the standard image pipeline`);
       return null;
     }
 
