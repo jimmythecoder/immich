@@ -407,14 +407,19 @@ export class MediaService extends BaseService {
   }
 
   /**
-   * Remove a previously generated HDR derivative, ignoring the common case
-   * where none exists. Cleanup must never disrupt thumbnail generation.
+   * Remove a previously generated HDR derivative.
+   *
+   * Checks for existence first: the overwhelmingly common case is that there is
+   * nothing to remove, and calling unlink unconditionally makes the storage
+   * layer log a warning for every ordinary SDR photo.
    */
   private async removeHdrPreview(hdrPath: string): Promise<void> {
     try {
-      await this.storageRepository.unlink(hdrPath);
+      if (await this.storageRepository.checkFileExists(hdrPath)) {
+        await this.storageRepository.unlink(hdrPath);
+      }
     } catch {
-      // nothing to remove
+      // cleanup is best-effort and must never disrupt thumbnail generation
     }
   }
 
