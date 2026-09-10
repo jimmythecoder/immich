@@ -153,13 +153,16 @@ export class StorageService extends BaseService {
 
       // HDR previews are derived from the preview path rather than tracked in
       // the database, so remove the sibling derivative alongside its parent.
-      // This is a no-op for files that never had one.
+      //
+      // Check for existence first: unlink() logs a warning when the file is
+      // absent, and absence is the normal case here - most files never have an
+      // HDR derivative, and thumbnails never do.
       const hdrPath = getHdrPreviewPath(file);
-      if (hdrPath !== file) {
+      if (hdrPath !== file && (await this.storageRepository.checkFileExists(hdrPath))) {
         try {
           await this.storageRepository.unlink(hdrPath);
         } catch {
-          // no HDR derivative for this file
+          // best effort; cleanup must not fail the job
         }
       }
     }
