@@ -6,7 +6,7 @@ import { Duration } from 'luxon';
 import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
 import { Writable } from 'node:stream';
-import sharp, { Sharp } from 'sharp';
+import sharp, { AvifOptions, JpegOptions, Sharp, WebpOptions } from 'sharp';
 import type {
   Bitmap,
   DecodeToBufferOptions,
@@ -180,7 +180,7 @@ export class MediaRepository {
   }
 
   async generateThumbnail(image: Bitmap, options: GenerateThumbnailOptions, output: string): Promise<void> {
-    const formatOptions: sharp.JpegOptions & sharp.WebpOptions & sharp.AvifOptions = {
+    const formatOptions: JpegOptions & WebpOptions & AvifOptions = {
       quality: options.quality,
       // this is default in libvips (except the threshold is 90), but we need to set it manually in sharp
       chromaSubsampling: options.quality >= 80 ? '4:4:4' : '4:2:0',

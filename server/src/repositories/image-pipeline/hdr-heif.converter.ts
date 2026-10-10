@@ -7,7 +7,7 @@ import {
   HdrConvertResult,
   HdrHeifConverter,
   HdrProbeResult,
-} from 'src/repositories/image-pipeline/image-pipeline.types';
+} from 'src/repositories/image-pipeline/image-pipeline.types.js';
 
 const execFileAsync = promisify(execFile);
 

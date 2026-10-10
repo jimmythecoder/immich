@@ -37,15 +37,15 @@ import {
 } from 'src/enum.js';
 import { AssetJobRepository } from 'src/repositories/asset-job.repository.js';
 import {
-  getHdrPreviewPath,
   HdrHeifPipeline,
+  getHdrPreviewPath,
   isHeifExtension,
 } from 'src/repositories/image-pipeline/hdr-heif.pipeline.js';
 import { BoundingBox } from 'src/repositories/machine-learning.repository.js';
 import { BaseService } from 'src/services/base.service.js';
 import { getAssetFile, getDimensions } from 'src/utils/asset.util.js';
 import { checkFaceVisibility, checkOcrVisibility } from 'src/utils/editor.js';
-import { BaseConfig, supportsProgressive, ThumbnailConfig } from 'src/utils/media.js';
+import { BaseConfig, ThumbnailConfig, supportsProgressive } from 'src/utils/media.js';
 import { mimeTypes } from 'src/utils/mime-types.js';
 import { batched, clamp } from 'src/utils/misc.js';
 import { getOutputDimensions } from 'src/utils/transform.js';
