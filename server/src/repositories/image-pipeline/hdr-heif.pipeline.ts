@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { extname } from 'node:path';
-import { HdrHeifCliConverter } from 'src/repositories/image-pipeline/hdr-heif.converter.js';
-import {
+import type {
   GeneratedPreview,
   HdrHeifConverter,
   HdrProbeResult,
   ImageInput,
   ImagePipeline,
   PreviewOptions,
-} from 'src/repositories/image-pipeline/image-pipeline.types';
+} from 'src/repositories/image-pipeline/image-pipeline.types.js';
+import { HdrHeifCliConverter } from 'src/repositories/image-pipeline/hdr-heif.converter.js';
 import { LoggingRepository } from 'src/repositories/logging.repository.js';
 
 /** Container formats that can carry Apple HDR structures. */

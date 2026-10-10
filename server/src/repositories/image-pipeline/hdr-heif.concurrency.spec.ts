@@ -1,4 +1,4 @@
-import { HdrHeifCliConverter } from 'src/repositories/image-pipeline/hdr-heif.converter';
+import { HdrHeifCliConverter } from 'src/repositories/image-pipeline/hdr-heif.converter.js';
 
 /**
  * The conversion limiter exists to stop bulk imports exhausting host memory:

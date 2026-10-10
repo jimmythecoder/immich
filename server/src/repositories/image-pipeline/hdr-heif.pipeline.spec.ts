@@ -1,12 +1,16 @@
+import { Mocked } from 'vitest';
 import { HdrHeifCliConverter } from 'src/repositories/image-pipeline/hdr-heif.converter.js';
-import { getHdrPreviewPath, HdrHeifPipeline, isHeifExtension } from 'src/repositories/image-pipeline/hdr-heif.pipeline.js';
+import {
+  HdrHeifPipeline,
+  getHdrPreviewPath,
+  isHeifExtension,
+} from 'src/repositories/image-pipeline/hdr-heif.pipeline.js';
 import {
   HdrConvertResult,
   HdrHeifConverter,
   HdrProbeResult,
-} from 'src/repositories/image-pipeline/image-pipeline.types';
+} from 'src/repositories/image-pipeline/image-pipeline.types.js';
 import { LoggingRepository } from 'src/repositories/logging.repository.js';
-import { Mocked } from 'vitest';
 
 const newLoggerMock = () =>
   ({

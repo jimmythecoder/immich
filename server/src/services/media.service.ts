@@ -26,8 +26,8 @@ import {
 } from 'src/enum.js';
 import { AssetJobRepository } from 'src/repositories/asset-job.repository.js';
 import {
-  getHdrPreviewPath,
   HdrHeifPipeline,
+  getHdrPreviewPath,
   isHeifExtension,
 } from 'src/repositories/image-pipeline/hdr-heif.pipeline.js';
 import { BoundingBox } from 'src/repositories/machine-learning.repository.js';
