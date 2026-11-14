@@ -19,19 +19,19 @@ const CONVERT_TIMEOUT_MS = 180_000;
 const DEFAULT_BINARY_NAME = 'immich-hdr-heif';
 
 /**
- * Bounds how many conversions may run at once.
- *
- * A single conversion of a 48MP HEIC peaks around 200MB RSS: the full-size base
- * image, the gain map, and the linear working buffer all have to be resident at
- * the same time. Thumbnail generation defaults to a job concurrency of 3, and
- * Sharp is simultaneously decoding the same large images, so leaving this
- * unbounded can exhaust memory on small hosts (an 8GB NAS running the whole
- * stack will OOM part-way through a bulk import).
- *
- * Serialising by default costs very little - the encoder is already
- * multi-threaded - and makes memory use predictable. Raise it on larger hosts
- * with IMMICH_HDR_CONCURRENCY.
- */
+Bounds how many conversions may run at once.
+
+A single conversion of a 48MP HEIC peaks around 200MB RSS: the full-size base
+image, the gain map, and the linear working buffer all have to be resident at
+the same time. Thumbnail generation defaults to a job concurrency of 3, and
+Sharp is simultaneously decoding the same large images, so leaving this
+unbounded can exhaust memory on small hosts (an 8GB NAS running the whole
+stack will OOM part-way through a bulk import).
+
+Serialising by default costs very little - the encoder is already
+multi-threaded - and makes memory use predictable. Raise it on larger hosts
+with IMMICH_HDR_CONCURRENCY.
+*/
 const parseConcurrency = (): number => {
   const raw = Number(process.env.IMMICH_HDR_CONCURRENCY);
   if (!Number.isSafeInteger(raw) || raw < 1) {
@@ -41,12 +41,12 @@ const parseConcurrency = (): number => {
 };
 
 /**
- * Minimal counting semaphore.
- *
- * On release the slot is handed directly to the next waiter rather than being
- * decremented and re-acquired, which would let a new caller slip in ahead of
- * the queue and briefly exceed the limit.
- */
+Minimal counting semaphore.
+
+On release the slot is handed directly to the next waiter rather than being
+decremented and re-acquired, which would let a new caller slip in ahead of
+the queue and briefly exceed the limit.
+*/
 class Semaphore {
   private active = 0;
   private waiting: Array<() => void> = [];
@@ -83,11 +83,11 @@ class Semaphore {
 const conversionLimiter = new Semaphore(parseConcurrency());
 
 /**
- * Locations searched for the helper binary, in order.
- *
- * `IMMICH_HDR_HEIF_BIN` wins so a deployment can point at its own build; the
- * remaining entries cover the Docker image and a local `make` build.
- */
+Locations searched for the helper binary, in order.
+
+`IMMICH_HDR_HEIF_BIN` wins so a deployment can point at its own build; the
+remaining entries cover the Docker image and a local `make` build.
+*/
 const candidatePaths = (): string[] => {
   const candidates: string[] = [];
 
@@ -106,12 +106,12 @@ const candidatePaths = (): string[] => {
 };
 
 /**
- * Drives the bundled libheif/libavif helper over `child_process`.
- *
- * This is the first implementation of {@link HdrHeifConverter}. It is
- * intentionally the only place that knows the helper is an external process, so
- * a future native-binding or worker-service backend can replace it wholesale.
- */
+Drives the bundled libheif/libavif helper over `child_process`.
+
+This is the first implementation of {@link HdrHeifConverter}. It is
+intentionally the only place that knows the helper is an external process, so
+a future native-binding or worker-service backend can replace it wholesale.
+*/
 export class HdrHeifCliConverter implements HdrHeifConverter {
   private binaryPath: string | null = null;
   private resolution: Promise<string | null> | null = null;
@@ -121,9 +121,9 @@ export class HdrHeifCliConverter implements HdrHeifConverter {
   }
 
   /**
-   * Resolve the helper once and cache the outcome, including failure. A missing
-   * helper is an expected deployment state, not an error.
-   */
+  Resolve the helper once and cache the outcome, including failure. A missing
+  helper is an expected deployment state, not an error.
+  */
   private resolveBinary(): Promise<string | null> {
     if (this.binaryPath) {
       return Promise.resolve(this.binaryPath);
@@ -150,12 +150,12 @@ export class HdrHeifCliConverter implements HdrHeifConverter {
   }
 
   /**
-   * Run the helper and parse its JSON result.
-   *
-   * The helper writes a single JSON object to stdout for both success and
-   * failure, and uses a non-zero exit code only to categorise failures, so we
-   * parse stdout regardless of exit status.
-   */
+  Run the helper and parse its JSON result.
+  
+  The helper writes a single JSON object to stdout for both success and
+  failure, and uses a non-zero exit code only to categorise failures, so we
+  parse stdout regardless of exit status.
+  */
   private async run<T>(args: string[], timeout: number): Promise<T> {
     const binary = await this.resolveBinary();
     if (!binary) {

@@ -9,16 +9,16 @@ import { HdrHeifCliConverter } from 'src/repositories/image-pipeline/hdr-heif.co
 const execFileAsync = promisify(execFile);
 
 /**
- * Integration tests for the native libheif/libavif helper.
- *
- * These exercise the real decoder and encoder against a real Apple HDR HEIC.
- * They are skipped automatically when the helper has not been built or the
- * fixture is not present, so they never block a normal `npm test` run.
- *
- * Point IMMICH_HDR_TEST_FIXTURE at a HDR HEIC to run them, e.g. the file this
- * feature was developed against (IMG_7125.HEIC, iPhone 17 Pro, 5712x4284,
- * tiled 9x5 HEVC grid plus an `hdrgainmap` auxiliary image and a `tmap` item).
- */
+Integration tests for the native libheif/libavif helper.
+
+These exercise the real decoder and encoder against a real Apple HDR HEIC.
+They are skipped automatically when the helper has not been built or the
+fixture is not present, so they never block a normal `npm test` run.
+
+Point IMMICH_HDR_TEST_FIXTURE at a HDR HEIC to run them, e.g. the file this
+feature was developed against (IMG_7125.HEIC, iPhone 17 Pro, 5712x4284,
+tiled 9x5 HEVC grid plus an `hdrgainmap` auxiliary image and a `tmap` item).
+*/
 const binaryPath =
   process.env.IMMICH_HDR_HEIF_BIN ?? join(process.cwd(), 'native', 'hdr-heif', 'build', 'immich-hdr-heif');
 const fixturePath = process.env.IMMICH_HDR_TEST_FIXTURE;

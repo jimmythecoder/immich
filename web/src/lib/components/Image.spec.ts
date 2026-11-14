@@ -73,4 +73,41 @@ describe('Image component', () => {
     img.dispatchEvent(new Event('error'));
     expect(onError).not.toHaveBeenCalled();
   });
+
+  describe('HDR preview', () => {
+    const src = '/api/assets/abc/thumbnail?size=preview';
+    const hdrSrc = '/api/assets/abc/thumbnail?size=preview&hdr=true';
+
+    it('renders a plain image when no HDR derivative is offered', async () => {
+      const { baseElement } = await render(Image, { src, alt: 'test' });
+      expect(baseElement.querySelector('img')!.getAttribute('src')).toBe(src);
+      expect(baseElement.querySelector('source')).toBeNull();
+    });
+
+    it('offers the HDR AVIF as a <picture> source', async () => {
+      const { baseElement } = await render(Image, { src, hdrSrc, alt: 'test' });
+      const source = baseElement.querySelector('source');
+      expect(source).not.toBeNull();
+      expect(source!.getAttribute('srcset')).toBe(hdrSrc);
+      expect(source!.getAttribute('type')).toBe('image/avif');
+    });
+
+    it('gates the HDR source on an HDR-capable display', async () => {
+      const { baseElement } = await render(Image, { src, hdrSrc, alt: 'test' });
+      // Without this, SDR displays would receive PQ content they cannot show correctly.
+      expect(baseElement.querySelector('source')!.getAttribute('media')).toBe('(dynamic-range: high)');
+    });
+
+    it('keeps the SDR image as the fallback so non-HDR clients still render', async () => {
+      const { baseElement } = await render(Image, { src, hdrSrc, alt: 'test' });
+      expect(baseElement.querySelector('img')!.getAttribute('src')).toBe(src);
+    });
+
+    it('orders the HDR source before the fallback image, as <picture> requires', async () => {
+      const { baseElement } = await render(Image, { src, hdrSrc, alt: 'test' });
+      const picture = baseElement.querySelector('picture');
+      expect(picture?.children[0].tagName).toBe('SOURCE');
+      expect(picture?.children[1].tagName).toBe('IMG');
+    });
+  });
 });

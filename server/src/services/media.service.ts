@@ -69,10 +69,10 @@ export class MediaService extends BaseService {
   private hdrHeifPipelineInstance?: HdrHeifPipeline;
 
   /**
-   * Constructed lazily so the HDR pipeline costs nothing on deployments that
-   * never encounter an HDR HEIC, and so adding it does not require touching the
-   * shared BaseService constructor.
-   */
+  Constructed lazily so the HDR pipeline costs nothing on deployments that
+  never encounter an HDR HEIC, and so adding it does not require touching the
+  shared BaseService constructor.
+  */
   private get hdrHeifPipeline(): HdrHeifPipeline {
     this.hdrHeifPipelineInstance ??= new HdrHeifPipeline(this.logger);
     return this.hdrHeifPipelineInstance;
@@ -416,12 +416,12 @@ export class MediaService extends BaseService {
   }
 
   /**
-   * Remove a previously generated HDR derivative.
-   *
-   * Checks for existence first: the overwhelmingly common case is that there is
-   * nothing to remove, and calling unlink unconditionally makes the storage
-   * layer log a warning for every ordinary SDR photo.
-   */
+  Remove a previously generated HDR derivative.
+  
+  Checks for existence first: the overwhelmingly common case is that there is
+  nothing to remove, and calling unlink unconditionally makes the storage
+  layer log a warning for every ordinary SDR photo.
+  */
   private async removeHdrPreview(hdrPath: string): Promise<void> {
     try {
       if (await this.storageRepository.checkFileExists(hdrPath)) {
@@ -433,12 +433,12 @@ export class MediaService extends BaseService {
   }
 
   /**
-   * Generate a 10-bit HDR AVIF alongside the existing SDR preview.
-   *
-   * The HDR preview is strictly additive: the SDR preview is already on disk by
-   * the time this runs, and every failure path is swallowed after logging so
-   * that thumbnail generation, upload, and indexing continue unaffected.
-   */
+  Generate a 10-bit HDR AVIF alongside the existing SDR preview.
+  
+  The HDR preview is strictly additive: the SDR preview is already on disk by
+  the time this runs, and every failure path is swallowed after logging so
+  that thumbnail generation, upload, and indexing continue unaffected.
+  */
   private async generateHdrPreview(
     asset: ThumbnailAsset,
     previewPath: string,

@@ -219,10 +219,10 @@ export function getAssetUrls(asset: AssetResponseDto, sharedLink?: SharedLinkRes
 }
 
 /**
- * URL for the HDR (10-bit AVIF) preview.
- *
- * Only produced for images, since HDR previews are generated from still assets.
- */
+URL for the HDR (10-bit AVIF) preview.
+
+Only produced for images, since HDR previews are generated from still assets.
+*/
 export const getAssetHdrPreviewUrl = (asset: AssetResponseDto) => {
   if (asset.type !== AssetTypeEnum.Image) {
     return undefined;

@@ -1,8 +1,6 @@
 import { ImageFormat } from 'src/enum.js';
 
-/**
- * The source image a pipeline is asked to work with.
- */
+/** The source image a pipeline is asked to work with. */
 export interface ImageInput {
   /** Absolute path to the original asset. Never modified. */
   path: string;
@@ -18,12 +16,12 @@ export interface PreviewOptions {
 }
 
 /**
- * Metadata describing a preview a pipeline produced.
- *
- * This is deliberately richer than the SDR path needs so that HDR previews can
- * be described accurately without a database migration - the values are derived
- * on demand from the generated file.
- */
+Metadata describing a preview a pipeline produced.
+
+This is deliberately richer than the SDR path needs so that HDR previews can
+be described accurately without a database migration - the values are derived
+on demand from the generated file.
+*/
 export interface GeneratedPreview {
   path: string;
   format: 'avif' | ImageFormat;
@@ -42,27 +40,25 @@ export interface GeneratedPreview {
 }
 
 /**
- * A strategy for turning an original image into a browser-displayable preview.
- *
- * Implementations must be side-effect free with respect to the original file.
- */
+A strategy for turning an original image into a browser-displayable preview.
+
+Implementations must be side-effect free with respect to the original file.
+*/
 export interface ImagePipeline {
   readonly name: string;
 
   /**
-   * Whether this pipeline can, and should, handle the given input.
-   *
-   * Must never throw: a pipeline that cannot make a confident decision should
-   * report `false` so the caller falls back to the default path.
-   */
+  Whether this pipeline can, and should, handle the given input.
+  
+  Must never throw: a pipeline that cannot make a confident decision should
+  report `false` so the caller falls back to the default path.
+  */
   supports(input: ImageInput): Promise<boolean>;
 
   generatePreview(input: ImageInput, outputPath: string, options: PreviewOptions): Promise<GeneratedPreview>;
 }
 
-/**
- * Result of inspecting a HEIF file for HDR structures.
- */
+/** Result of inspecting a HEIF file for HDR structures. */
 export interface HdrProbeResult {
   hdr: boolean;
   /** How HDR would be reconstructed: `apple-gain-map`, `native-hdr`, or `none`. */
@@ -105,12 +101,12 @@ export interface HdrConvertOptions {
 }
 
 /**
- * The decoder/encoder backend used by the HDR pipeline.
- *
- * Kept deliberately narrow so the current child_process implementation can be
- * swapped for native bindings, libvips, or a dedicated worker service without
- * touching the pipeline or the media service.
- */
+The decoder/encoder backend used by the HDR pipeline.
+
+Kept deliberately narrow so the current child_process implementation can be
+swapped for native bindings, libvips, or a dedicated worker service without
+touching the pipeline or the media service.
+*/
 export interface HdrHeifConverter {
   /** Whether the backend is usable in this deployment. Must never throw. */
   isAvailable(): Promise<boolean>;

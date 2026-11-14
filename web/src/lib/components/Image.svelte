@@ -7,12 +7,12 @@
   type Props = Omit<HTMLImgAttributes, 'onload' | 'onerror'> & {
     src: string | undefined;
     /**
-     * Optional HDR (10-bit AVIF) derivative.
-     *
-     * Offered through a `<picture>` source that is gated on both AVIF support
-     * and an HDR-capable display, so SDR displays and older browsers keep
-     * receiving the ordinary `src` untouched.
-     */
+    Optional HDR (10-bit AVIF) derivative.
+    
+    Offered through a `<picture>` source that is gated on both AVIF support
+    and an HDR-capable display, so SDR displays and older browsers keep
+    receiving the ordinary `src` untouched.
+    */
     hdrSrc?: string;
     onStart?: () => void;
     onLoad?: () => void;

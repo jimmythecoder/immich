@@ -21,13 +21,13 @@ const HDR_EXTENSION = '.avif';
 export const isHeifExtension = (fileName: string): boolean => HEIF_EXTENSIONS.has(extname(fileName).toLowerCase());
 
 /**
- * Derive the HDR preview path from the existing SDR preview path.
- *
- * Deterministic by design: it lets the HDR derivative be located, served,
- * deleted, and regenerated without a database migration.
- *
- * `/thumbs/ab/cd/asset-preview.jpeg` -> `/thumbs/ab/cd/asset-preview-hdr.avif`
- */
+Derive the HDR preview path from the existing SDR preview path.
+
+Deterministic by design: it lets the HDR derivative be located, served,
+deleted, and regenerated without a database migration.
+
+`/thumbs/ab/cd/asset-preview.jpeg` -> `/thumbs/ab/cd/asset-preview-hdr.avif`
+*/
 export const getHdrPreviewPath = (previewPath: string): string => {
   const extension = extname(previewPath);
   const base = extension ? previewPath.slice(0, -extension.length) : previewPath;
@@ -35,11 +35,11 @@ export const getHdrPreviewPath = (previewPath: string): string => {
 };
 
 /**
- * Generates 10-bit HDR AVIF previews for Apple HDR HEIC/HEIF assets.
- *
- * This pipeline is additive: it never replaces the SDR preview, and any failure
- * is reported to the caller so the asset can fall back to the ordinary path.
- */
+Generates 10-bit HDR AVIF previews for Apple HDR HEIC/HEIF assets.
+
+This pipeline is additive: it never replaces the SDR preview, and any failure
+is reported to the caller so the asset can fall back to the ordinary path.
+*/
 @Injectable()
 export class HdrHeifPipeline implements ImagePipeline {
   readonly name = 'hdr-heif';
@@ -55,20 +55,20 @@ export class HdrHeifPipeline implements ImagePipeline {
   }
 
   /**
-   * Whether this asset is an HDR-capable HEIC/HEIF.
-   *
-   * Fails safe: any uncertainty resolves to `false`, which keeps the asset on
-   * the existing Sharp path.
-   */
+  Whether this asset is an HDR-capable HEIC/HEIF.
+  
+  Fails safe: any uncertainty resolves to `false`, which keeps the asset on
+  the existing Sharp path.
+  */
   async supports(input: ImageInput): Promise<boolean> {
     const probe = await this.probe(input);
     return probe?.hdr === true;
   }
 
   /**
-   * Inspect an asset, returning `null` when it is not an HDR HEIF or when
-   * detection could not be completed.
-   */
+  Inspect an asset, returning `null` when it is not an HDR HEIF or when
+  detection could not be completed.
+  */
   async probe(input: ImageInput): Promise<HdrProbeResult | null> {
     if (!isHeifExtension(input.originalFileName) && !isHeifExtension(input.path)) {
       return null;

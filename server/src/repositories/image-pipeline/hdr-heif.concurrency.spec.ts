@@ -1,10 +1,10 @@
 import { HdrHeifCliConverter } from 'src/repositories/image-pipeline/hdr-heif.converter.js';
 
 /**
- * The conversion limiter exists to stop bulk imports exhausting host memory:
- * each conversion of a large HEIC peaks around 200MB, and thumbnail generation
- * runs three jobs concurrently by default.
- */
+The conversion limiter exists to stop bulk imports exhausting host memory:
+each conversion of a large HEIC peaks around 200MB, and thumbnail generation
+runs three jobs concurrently by default.
+*/
 describe('HdrHeifCliConverter concurrency', () => {
   it('serialises conversions so peak memory stays bounded', async () => {
     const sut = new HdrHeifCliConverter('/nonexistent/binary');

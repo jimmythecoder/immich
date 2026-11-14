@@ -124,9 +124,9 @@
   const loaderKey = $derived(`${asset.id}:${asset.thumbhash}:${sharedLink?.id}`);
 
   /**
-   * HDR derivative offered alongside the SDR preview. Suppressed for shared
-   * links with restricted metadata, which are limited to the plain preview.
-   */
+  HDR derivative offered alongside the SDR preview. Suppressed for shared
+  links with restricted metadata, which are limited to the plain preview.
+  */
   const hdrPreviewUrl = $derived(
     sharedLink && (!sharedLink.allowDownload || !sharedLink.showMetadata) ? undefined : getAssetHdrPreviewUrl(asset),
   );
